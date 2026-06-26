@@ -1,0 +1,117 @@
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(12, 11, A1, A2, A3, A4);
+
+const int trigPin = 8;
+const int echoPin = 9;
+
+const int forcePin = A0;
+
+const int greenLED = 3;
+const int yellowLED = 4;
+const int redLED = 5;
+const int buzzer = 6;
+
+void setup()
+{
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  pinMode(greenLED, OUTPUT);
+  pinMode(yellowLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+
+  pinMode(buzzer, OUTPUT);
+
+  lcd.begin(16,2);
+
+  lcd.setCursor(0,0);
+  lcd.print("SMART ELEVATOR");
+  lcd.setCursor(0,1);
+  lcd.print("SAFETY SYSTEM");
+
+  delay(2000);
+  lcd.clear();
+
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Ultrasonic Sensor
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH);
+
+  float distance = duration * 0.0343 / 2;
+
+  // Force Sensor
+  int forceValue = analogRead(forcePin);
+
+  Serial.print("Distance = ");
+  Serial.print(distance);
+  Serial.print(" cm   ");
+
+  Serial.print("Force = ");
+  Serial.println(forceValue);
+
+  // SAFE
+  if(distance > 100 && forceValue < 400)
+  {
+    digitalWrite(greenLED,HIGH);
+    digitalWrite(yellowLED,LOW);
+    digitalWrite(redLED,LOW);
+
+    noTone(buzzer);
+
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("STATUS: SAFE");
+
+    lcd.setCursor(0,1);
+    lcd.print("DOOR CLEAR");
+  }
+
+  // WARNING
+  else if((distance >=50 && distance<=100) ||
+          (forceValue>=400 && forceValue<=700))
+  {
+    digitalWrite(greenLED,LOW);
+    digitalWrite(yellowLED,HIGH);
+    digitalWrite(redLED,LOW);
+
+    noTone(buzzer);
+
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("WARNING");
+
+    lcd.setCursor(0,1);
+    lcd.print("CHECK DOOR");
+  }
+
+  // CRITICAL
+  else
+  {
+    digitalWrite(greenLED,LOW);
+    digitalWrite(yellowLED,LOW);
+    digitalWrite(redLED,HIGH);
+
+    tone(buzzer,1000);
+
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("CRITICAL!");
+
+    lcd.setCursor(0,1);
+    lcd.print("STOP ELEVATOR");
+  }
+
+  delay(1000);
+}
